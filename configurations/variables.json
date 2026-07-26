@@ -1,0 +1,21 @@
+{
+  "weather": {
+    "hourly": [
+      "temperature_2m",
+      "apparent_temperature",
+      "relative_humidity_2m",
+      "precipitation",
+      "wind_speed_10m",
+      "pressure_msl"
+    ]
+  },
+  "air_quality": {
+    "hourly": [
+      "pm10",
+      "pm2_5",
+      "nitrogen_dioxide",
+      "ozone",
+      "european_aqi"
+    ]
+  }
+}

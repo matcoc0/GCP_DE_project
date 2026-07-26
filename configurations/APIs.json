@@ -1,0 +1,33 @@
+{
+  "geocoding": {
+    "base_url": "https://geocoding-api.open-meteo.com",
+    "endpoint": "/v1/search",
+    "request_method": "GET",
+    "timeout_seconds": 30.0,
+    "default_params": {
+      "count": 10,
+      "language": "en",
+      "format": "json"
+    }
+  },
+  "weather": {
+    "base_url": "https://api.open-meteo.com",
+    "endpoint": "/v1/forecast",
+    "request_method": "GET",
+    "timeout_seconds": 30.0,
+    "default_params": {
+      "timezone": "UTC",
+      "forecast_days": 3
+    }
+  },
+  "air_quality": {
+    "base_url": "https://air-quality-api.open-meteo.com",
+    "endpoint": "/v1/air-quality",
+    "request_method": "GET",
+    "timeout_seconds": 30.0,
+    "default_params": {
+      "timezone": "UTC",
+      "forecast_days": 3
+    }
+  }
+}

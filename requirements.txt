@@ -1,2 +1,1 @@
-python DE_tool.py --help
-python DE_tool.py --versionhttpx>=0.27,<1.0
+httpx>=0.27,<1.0
