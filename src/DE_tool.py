@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from open_meteo_pipeline.main import main
+from open_meteo_pipeline.main import main as open_meteo_pipeline_main
 
 
 def add_explore_command(
@@ -10,29 +10,36 @@ def add_explore_command(
 ) -> None:
     """Add the Open-Meteo exploration command."""
 
-    explore_parser = subparsers.add_parser(
+    parser = subparsers.add_parser(
         "explore",
         help="Explore Open-Meteo weather and air-quality APIs.",
+        description="Fetch weather and ai-quality forecast for a selected city",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    explore_parser.add_argument(
-        "city",
+    parser.add_argument(
+        "--city",
+        "-c",
         help="City name, for example Paris or London.",
     )
 
-    explore_parser.add_argument(
+    parser.add_argument(
         "--country-code",
+        "-cc",
         help="Optional ISO country code, for example FR.",
     )
 
-    explore_parser.add_argument(
+    parser.add_argument(
         "--forecast-days",
+        "-fc",
         type=int,
         default=3,
         choices=range(1, 8),
         metavar="[1-7]",
-        help="Number of forecast days. Default: 3.",
+        help="Number of forecast days.",
     )
+
+    parser.set_defaults(func=open_meteo_pipeline_main)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,13 +67,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run() -> None:
+def run(argv: list[str] | None = None) -> None:
     """Parse arguments and run the application."""
 
     parser = build_parser()
-    arguments = parser.parse_args()
+    arguments, unknown_arguments = parser.parse_known_args(argv)
 
-    main(arguments)
+    command_function = arguments.func
+
+    argument_dictionnary = vars(arguments).copy()
+    argument_dictionnary.pop("func")
+    argument_dictionnary.pop("command")
+
+    if unknown_arguments:
+        argument_dictionnary["unknown_args"] = unknown_arguments
+
+    command_function(**argument_dictionnary)
 
 
 if __name__ == "__main__":

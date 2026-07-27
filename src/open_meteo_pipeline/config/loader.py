@@ -106,7 +106,7 @@ def load_hourly_variables(source_name: str) -> list[str]:
         available_sources = ", ".join(sorted(configurations))
 
         raise KeyError(
-            f"Unknown variable configuration: {source_name}. "
+            f"Unknown variable configuration: {source_name}."
             f"Available sources: {available_sources}"
         ) from error
 

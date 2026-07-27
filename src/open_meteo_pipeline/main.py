@@ -1,50 +1,82 @@
 from __future__ import annotations
 
-import argparse
+import httpx
 
-from .config import (
-    build_api_url,
-    load_api_configuration,
-    load_hourly_variables,
+from .clients.open_meteo import (
+    fetch_air_quality,
+    fetch_weather,
+    geocode_city,
+)
+from .config import load_api_configuration
+from .services.exploration import (
+    display_location,
+    inspect_hourly_data,
 )
 
 
-def run_exploration(arguments: argparse.Namespace) -> None:
-    """Run the exploration workflow."""
+def run_exploration(
+    city: str, country_code: str | None = None, forecast_days: int = 3
+) -> None:
+    """Fetch and inspect Open-Meteo data."""
+    normalized_city = city.strip()
+
+    if not normalized_city:
+        raise ValueError("city cannot be empty.")
+
+    normalized_country_code = None
+
+    if country_code:
+        normalized_country_code = country_code.strip().upper()
+
+        if len(normalized_country_code) != 2:
+            raise ValueError("country_code must be a two-character ISO country code.")
+
+    if not 1 <= forecast_days <= 7:
+        raise ValueError("forecast_days must be between 1 and 7.")
 
     geocoding_configuration = load_api_configuration("geocoding")
     weather_configuration = load_api_configuration("weather")
     air_quality_configuration = load_api_configuration("air_quality")
 
-    weather_variables = load_hourly_variables("weather")
-    air_quality_variables = load_hourly_variables("air_quality")
+    timeout_seconds = max(
+        float(geocoding_configuration["timeout_seconds"]),
+        float(weather_configuration["timeout_seconds"]),
+        float(air_quality_configuration["timeout_seconds"]),
+    )
 
-    print("\nOpen-Meteo exploration configuration")
-    print("------------------------------------")
-    print(f"City: {arguments.city}")
-    print(f"Country code: {arguments.country_code or 'not specified'}")
-    print(f"Forecast days: {arguments.forecast_days}")
+    with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+        location = geocode_city(client, city=city, country_code=country_code)
 
-    print("\nAPI endpoints")
-    print(f"Geocoding: {build_api_url('geocoding')}")
-    print(f"Weather: {build_api_url('weather')}")
-    print(f"Air quality: {build_api_url('air_quality')}")
+        weather = fetch_weather(
+            client,
+            latitude=float(location["latitude"]),
+            longitude=float(location["longitude"]),
+            forecast_days=forecast_days,
+        )
 
-    print("\nRequest methods")
-    print(f"Geocoding: {geocoding_configuration['request_method']}")
-    print(f"Weather: {weather_configuration['request_method']}")
-    print(f"Air quality: {air_quality_configuration['request_method']}")
+        air_quality = fetch_air_quality(
+            client,
+            latitude=float(location["latitude"]),
+            longitude=float(location["longitude"]),
+            forecast_days=forecast_days,
+        )
 
-    print("\nHourly variables")
-    print(f"Weather: {', '.join(weather_variables)}")
-    print(f"Air quality: {', '.join(air_quality_variables)}")
+    display_location(location)
+
+    inspect_hourly_data(weather, source_name="weather")
+    inspect_hourly_data(air_quality, source_name="air_quality")
 
 
-def main(arguments: argparse.Namespace) -> None:
+def main(
+    city: str,
+    country_code: str | None = None,
+    forecast_days: int = 3,
+    unknown_args: list[str] | None = None,
+) -> None:
     """Route the selected command to its workflow."""
 
-    if arguments.command == "explore":
-        run_exploration(arguments)
-        return
+    unknown_args = unknown_args or []
+    if unknown_args:
+        print(f"Unknown arguments ignored: {unknown_args}")
 
-    raise ValueError(f"Unsupported command: {arguments.command}")
+    run_exploration(city=city, country_code=country_code, forecast_days=forecast_days)
